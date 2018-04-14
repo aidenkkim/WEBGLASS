@@ -31,8 +31,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 console.log('config.server_port : %d', config.server_port);
 app.set('port', process.env.PORT || 3000);
 
-// 모듈로 분리한 데이터베이스 파일 불러오기
-var database = require('./database/database');
 
 
 /**
@@ -66,20 +64,9 @@ process.on('SIGTERM', function () {
     app.close();
 });
 
-app.on('close', function () {
-    console.log("Express 서버 객체가 종료됩니다.");
-    if (database.db) {
-        database.db.close();
-    }
-});
-
-
 // Express 서버 시작
 http.createServer(app).listen(app.get('port'), function(){
     console.log('서버가 시작되었습니다. 포트 : ' + app.get('port'));
-
-    // 데이터베이스 초기화
-    database.init(app, config);
 
 });
 

@@ -4,10 +4,9 @@ module.exports = {
     db_user: 'root',
     db_passwd: 'root',
     db_port:'53306',
-    database:'sys',
+    database:'webglass',
     route_info: [
         //===== User =====//
-        {file:'./index', path:'/a', method:'test', type:'get'},
-        {file:'./user', path:'/process/login', method:'login', type:'post'}					// user.login
+        {file:'./main', path:'/', method:'main', type:'get'},
     ]
 }
