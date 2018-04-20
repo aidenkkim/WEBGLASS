@@ -8,7 +8,7 @@ var httpReg = /^((http(s?))\:\/\/)([0-9a-zA-Z\-]+\.)+[a-zA-Z]{2,6}(\:[0-9]+)?(\/
 const DEFAULTALT = '글이 포함되지 않은 이미지 입니다.';
 
 //html을 입력으로 받아 imagePath : alt Object return
-var parseImgPath = function (url, html) {
+var parseImgPath = function (url, html, callback) {
     var images = {};
     var src = null;
     var alt = null;
@@ -24,33 +24,59 @@ var parseImgPath = function (url, html) {
             images[src] = alt;
         }
     });
-    return images;              //{path : alt}
+    callback(images);
+    //return images;              //{path : alt}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Object를 입력으로 받아 대체텍스트가 비정상적인 key만 담아 Object return
-var altAnalyzer = function (imagePath) {
+var altAnalyzer = function (imagePath, callback) {
     for(var i in imagePath){
-        if(imagePath[i]!="상품이미지" && imagePath[i] != ""){
+        if(imagePath[i]!="상품이미지"){
             delete imagePath[i];
         }
     }
-    return imagePath;           //대체 텍스트 비정상적인 것만 있는 {path:alt}
+    callback(imagePath);
+    //return imagePath;           //대체 텍스트 비정상적인 것만 있는 {path:alt}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
+var imageProcessing = function (client, images) {
+    var result = {};                  //최종 결과
+    for (var i in images) {
+        if (images[i] == 0) {               //검색 결과에 존재안함
+            imageDownloader(i, function(localPath){      //이미지 다운로드
+                imgAnalyzer(client, i, localPath, function(analyzedAlt){            //이미지 분석(vision api)
+                    if (analyzedAlt != null) {                              //글이 포함안된 경우
+                        result[i] = analyzedAlt;
+                    } else {                                                //글이 포함 안된 경우
+                        result[i] = DEFAULTALT;              //resultList에 '글이 포함되지 않은 이미지 입니다' 삽입
+                    }
+                });
+            });
+        }else{                                                  //검색 결과에 존재
+            result[i] = images[i];                               //글 포함되었건, 안되었건 모두 사전 처리 되어있으므로 넣기만 하면됨
+        }
+    }
+    return result;
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-var imageDownloader = function (url) {
+var imageDownloader = function (url, callback) {
+
     var savedir = __dirname + "/img";
     if (!fs.existsSync(savedir)) {
         fs.mkdirSync(savedir);
     }
     var fname = urlType.parse(url).pathname;
     fname = savedir + "/" + fname.replace(/[^a-zA-Z0-9\.]+/g, '_');
-    request(url).pipe(fs.createWriteStream(fname));
+    request(url).pipe(fs.createWriteStream(fname+'.jpg'));
 
+    callback(fname);
     return fname;
 }
 
@@ -61,11 +87,19 @@ var imageDownloader = function (url) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Google Vision API 연동
-var imgAnalyzer = function (path, localPath) {
+var imgAnalyzer = function (client, path, localPath, callback) {
 
-    var analyzedAlt = null; //분석 결과 alt
+// Performs label detection on the image file
+    client.textDetection(path).then(results => {
+        console.log("path : " +results[0].fullTextAnnotation.text);
+    }).catch(err => {
+        console.error(err);
+    });
+
+    var analyzedAlt = '분석 완료'; //분석 결과 alt
 
     dataManager.saveImgInfo(path, localPath, analyzedAlt);          //이미지 분석 결과 저장
+    callback(analyzedAlt);
     return analyzedAlt;
 }
 
@@ -74,36 +108,10 @@ var imgAnalyzer = function (path, localPath) {
 
 
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//result에 path와 alt 삽입
-var insertResult = function (path, result, alt) {
-
-    result['path'] = alt;
-
-    return result;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//result에 path와 Default alt 삽입
-var defaultResultList = function (path, result, alt) {
-
-    result['path'] = DEFAULTALT;
-
-    return result;
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports.parseImgPath = parseImgPath;
 module.exports.altAnalyzer = altAnalyzer;
 module.exports.imageDownloader = imageDownloader;
 module.exports.imgAnalyzer = imgAnalyzer;
-module.exports.insertResult = insertResult;
-module.exports.defaultResultList = defaultResultList;
+module.exports.imageProcessing = imageProcessing;
