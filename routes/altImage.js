@@ -28,39 +28,24 @@ var parseImgPath = function (url, html, callback) {
     //return images;              //{path : alt}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Object를 입력으로 받아 대체텍스트가 비정상적인 key만 담아 Object return
-var altAnalyzer = function (imagePath, callback) {
-    for(var i in imagePath){
-        if(imagePath[i]!="상품이미지"){
-            delete imagePath[i];
-        }
-    }
-    callback(imagePath);
-    //return imagePath;           //대체 텍스트 비정상적인 것만 있는 {path:alt}
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-var imageProcessing = function (client, images) {
+var imageProcessing = function (client, images, callback) {
     var result = {};                  //최종 결과
     for (var i in images) {
         if (images[i] == 0) {               //검색 결과에 존재안함
             imageDownloader(i, function(localPath){      //이미지 다운로드
-                imgAnalyzer(client, i, localPath, function(analyzedAlt){            //이미지 분석(vision api)
-                    if (analyzedAlt != null) {                              //글이 포함안된 경우
-                        result[i] = analyzedAlt;
+                imgAnalyzer(client, i, localPath, function(path, analyzedAlt){            //이미지 분석(vision api)
+                    if (analyzedAlt != null) {                              //글이 포함된 경우
+                        callback(path, analyzedAlt);
                     } else {                                                //글이 포함 안된 경우
-                        result[i] = DEFAULTALT;              //resultList에 '글이 포함되지 않은 이미지 입니다' 삽입
+                        callback(path, DEFAULTALT);                         //resultList에 '글이 포함되지 않은 이미지 입니다' 삽입
                     }
                 });
             });
         }else{                                                  //검색 결과에 존재
-            result[i] = images[i];                               //글 포함되었건, 안되었건 모두 사전 처리 되어있으므로 넣기만 하면됨
+            callback(i, images[i]);                               //글 포함되었건, 안되었건 모두 사전 처리 되어있으므로 넣기만 하면됨
         }
     }
-    return result;
 }
 
 
@@ -77,7 +62,6 @@ var imageDownloader = function (url, callback) {
     request(url).pipe(fs.createWriteStream(fname+'.jpg'));
 
     callback(fname);
-    return fname;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,19 +72,22 @@ var imageDownloader = function (url, callback) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Google Vision API 연동
 var imgAnalyzer = function (client, path, localPath, callback) {
-
+    var analyzedAlt = null; //분석 결과 alt
 // Performs label detection on the image file
     client.textDetection(path).then(results => {
-        console.log("path : " +results[0].fullTextAnnotation.text);
+        if(results[0].fullTextAnnotation != null){
+            analyzedAlt=results[0].fullTextAnnotation.text;
+        }else{
+            analyzedAlt=null;
+        }
+        dataManager.saveImgInfo(path, localPath, analyzedAlt);          //이미지 분석 결과 저장
+        callback(path, analyzedAlt);
     }).catch(err => {
         console.error(err);
     });
 
-    var analyzedAlt = '분석 완료'; //분석 결과 alt
 
-    dataManager.saveImgInfo(path, localPath, analyzedAlt);          //이미지 분석 결과 저장
-    callback(analyzedAlt);
-    return analyzedAlt;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +98,6 @@ var imgAnalyzer = function (client, path, localPath, callback) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports.parseImgPath = parseImgPath;
-module.exports.altAnalyzer = altAnalyzer;
 module.exports.imageDownloader = imageDownloader;
 module.exports.imgAnalyzer = imgAnalyzer;
 module.exports.imageProcessing = imageProcessing;
