@@ -22,6 +22,8 @@
     "morgan": "~1.9.0",
     "mysql": "^2.15.0",
     "request": "^2.85.0",
-    "serve-favicon": "~2.4.5"
+    "serve-favicon": "~2.4.5",
+    "phantomjs": "^2.1.7",
+    "casperjs": "^1.1.4"
   }
 }

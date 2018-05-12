@@ -124,6 +124,9 @@ var abnormalAltDetect = function (images, callback) {
             // 비정상 대체 텍스트 리스트에 존재하는지 확인
             for (var i in images) {
 
+                if(images[i] === null || images[i] === undefined || images[i]=== ""){
+                    images[i] = 'null';
+                }
                 //every는 forEach와 같은 쓰임인데, return false => break  / return true => 지속
                 result.every(function (item, idx) {
                     

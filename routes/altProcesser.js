@@ -19,6 +19,21 @@ var httpReg = /^((http(s?))\:\/\/)([0-9a-zA-Z\-]+\.)+[a-zA-Z]{2,6}(\:[0-9]+)?(\/
 
 
 
+
+/*
+*  Iframe src 추출
+*
+*   G마켓의 경우 Iframe안에 상품 상세 정보가 포함되어 있음
+* INPUT     :   html code(String)
+* OUTPUT    :   iframe link(String)
+* */
+var iframeExtract = function(html, callback){
+    var $ = cheerio.load(html);
+    var iframePath = $('#detail1').attr('src');
+    callback(iframePath);
+}
+
+
 /*
 * 접근성 개선하고자 하는 페이지를 입력받아 img 태그를 추출
 *
@@ -176,3 +191,4 @@ module.exports.parseImgPath = parseImgPath;
 module.exports.imageDownloader = imageDownloader;
 module.exports.OCRExtract = OCRExtract;
 module.exports.altImproving = altImproving;
+module.exports.iframeExtract = iframeExtract;
