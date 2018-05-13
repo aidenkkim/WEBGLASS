@@ -1,24 +1,20 @@
 /*
-* Electron main process
+* Electron
+* 상품 상세 페이지 다운로드
 *
 * TARGET_URL에 대하여 electron으로 데이터 다운로드, 페이지를 ./test.html이란 이름으로 저장
 * */
 
 var altScraping = require('./altScraping');
 var electron = require('electron');
-
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
-
-
 var win = new Array();
-
 
 // 준비가 된 시점에 호출되는 이벤트
 app.on('ready', function () {
     altScraping.linkList(0, function (linkList) {
         var count = 0;
-
 
         for (var i in linkList) {
             // 메인 윈도우 생성
@@ -29,7 +25,7 @@ app.on('ready', function () {
             // 지정 URL 로드
             win[count].loadURL(linkList[i].link);
             count++;
-
+            console.log('Loading Page : '+count);
         }
         var count = 1;
         setTimeout(function () {
@@ -38,9 +34,14 @@ app.on('ready', function () {
 
                 //로딩된 페이지를 ./test.html로 저장 , 모든 컨텐츠도 다운로드됨
                 //HTMLComplete, HTMLOnly 선택 가능
+                //iframe 을 추출하기 위해 HTMLOnly 선택
+                //HTMLComplete 선택하면 Resource 모두 다운로드됨
                 win[i].webContents.savePage('./crawled_data/gmarket_'+ linkList[i].crawl_link_id + '.html', 'HTMLOnly', (error) => {
                     if (!error) {
-                        console.log('Save Page Successful' + count + ' / ' + win.length);
+                        console.log('Saving Page : ' + count + ' / ' + win.length);
+                        if(count >= win.length){
+                            console.log('Save Product Page Done');
+                        }
                         count++;
                     }
                 });

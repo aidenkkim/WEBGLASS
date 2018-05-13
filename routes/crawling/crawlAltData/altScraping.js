@@ -16,9 +16,12 @@ var pool = function () {
         port: config.db_port,
         database: config.database
     });
-    console.log('Create Database Pool Successful')
+    console.log('Create Database Pool Done')
     return dbPool;
 }
+
+//DB에서 가져와 Scraping 할 Page 수
+const SCRAPING_NUM = 500;
 
 
 /*
@@ -40,53 +43,17 @@ var parseImgPath = function (html,callback) {
         src = $(item).attr('src');
         alt = $(item).attr('alt');
             images[src] = alt;
+
+        console.log('Extract Image Alt Text');
     });
 
     var data = [];
     for(var i in images){
         data.push([i, images[i]]);
     }
-
     callback(data);
-
-    //크롤링 데이터 Database에 저장
-    // saveScrapingAltData(images);
-
 }
 
-
-
-
-/*
-* 스크래핑한 데이터 저장
-* * INPUT     :   Image URL
-* */
-var saveScrapingAltData = function (images) {
-    pool().getConnection(function (err, conn) {                                     //Connection Pool에서 하나 연결
-        if (err) {
-            if (conn) {
-                conn.release();
-            }
-            return;
-        }
-        console.log('Database Thread ID : ' + conn.threadId);
-
-
-        // SQL 문을 실행함
-        // [data] 형태 중요!
-        var exec = conn.query('INSERT into alt_list (path, alt) VALUES ?', [images], function (err, result) {
-            conn.release();                                                               // Connection Pool 반드시 해제해야 함
-            if (err) {
-                console.log('saveScrapingAltData SQL Insert Error');
-                console.error(err);
-                return;
-            }
-                console.log('saveScrapingAltData Success');
-
-        });
-    });
-
-}
 
 
 
@@ -99,21 +66,31 @@ var linkList = function (status, callback) {
             }
             return;
         }
-        console.log('Database Thread ID : ' + conn.threadId);
-
         var data = {};
         // SQL 문을 실행함
-        var exec = conn.query('SELECT * FROM crawl_link WHERE status='+status, data, function (err, result) {
+        var query = null;
+        if(status == 0){
+            query = 'SELECT * FROM crawl_link WHERE status='+status +' limit 50';
+        }else if(status == 1){
+            query = 'SELECT * FROM crawl_link WHERE status='+status +' limit '+SCRAPING_NUM;
+        }
+        var exec = conn.query(query, data, function (err, result) {
             // Connection Pool 반드시 해제해야 함
             if (err) {
                 console.log('linkList Method SQL Error');
                 console.dir(err);
                 return;
             }
+            console.log('Bring Crawl Link Status '+status +' || Total : '+ result.length)
             callback(result);
         });
-
-        var exec = conn.query('UPDATE crawl_link SET status = '+ (status+1) +' WHERE status='+status, data, function (err, result) {
+        var query2 = null;
+        if(status == 0){
+            query2 = 'UPDATE crawl_link SET status = '+ (status+1) +' WHERE status='+status +' limit 50';
+        }else if(status == 1){
+            query2 = 'UPDATE crawl_link SET status = '+ (status+1) +' WHERE status='+status + ' limit '+SCRAPING_NUM;
+        }
+        var exec = conn.query(query2, data, function (err, result) {
             // Connection Pool 반드시 해제해야 함
             conn.release();
             if (err) {
@@ -121,12 +98,10 @@ var linkList = function (status, callback) {
                 console.dir(err);
                 return;
             }
+            console.log('Update Crawl Link Status to '+ (status+1) +' || Total : '+ result.affectedRows);
         });
     });
 }
-
-
-
 
 
 
@@ -135,7 +110,6 @@ var linkList = function (status, callback) {
 * 스크래핑한 데이터 저장
 * * INPUT     :   Image URL
 * */
-/*
 var saveScrapingAltData = function (images) {
     pool().getConnection(function (err, conn) {                                     //Connection Pool에서 하나 연결
         if (err) {
@@ -144,32 +118,24 @@ var saveScrapingAltData = function (images) {
             }
             return;
         }
-        console.log('Database Thread ID : ' + conn.threadId);
-
-
-        //DB에 Bulk로 넣기 위해서 배열 형태로 변경
-        //data.push([a,b]);
-        var data = [];
-        for(var i in images){
-            data.push([i, images[i]]);
-        }
 
         // SQL 문을 실행함
         // [data] 형태 중요!
-        var exec = conn.query('INSERT into alt_list (path, alt) VALUES ?', [data], function (err, result) {
+        var exec = conn.query('INSERT into alt_list (path, alt) VALUES ?', [images], function (err, result) {
             conn.release();                                                               // Connection Pool 반드시 해제해야 함
             if (err) {
                 console.log('saveScrapingAltData SQL Insert Error');
                 console.error(err);
                 return;
             }
-            console.log('saveScrapingAltData Success');
+            console.log('Save Extracted Alt Text Done');
 
         });
     });
 
 }
-*/
+
+
 
 module.exports.parseImgPath =parseImgPath;
 module.exports.linkList =linkList;
