@@ -1,23 +1,10 @@
 var cheerio = require('cheerio');
-var config = require('../../../../config');
-var mysql = require('mysql');
+var createDB = require('../createDB');
 
 //이미지 안에 글씨가 포함되지 않는 경우 표시되는 alt 문구 포맷
 const DEFAULTALT = '글이 포함되지 않은 이미지 입니다.';
 
-//Database 설정
-var pool = function () {
-    var dbPool = mysql.createPool({
-        connectionLimit: 10,
-        host: config.db_host,
-        user: config.db_user,
-        password: config.db_passwd,
-        port: config.db_port,
-        database: config.database
-    });
-    console.log('Create Database Pool Successful')
-    return dbPool;
-}
+
 
 /*
 * DataBase에 있는 링크 값을 가져오는 함수
@@ -27,7 +14,7 @@ var pool = function () {
 * */
 var linkList = function (status, callback) {
     //Connection Pool에서 하나 연결
-    pool().getConnection(function (err, conn) {
+    createDB.pool().getConnection(function (err, conn) {
         if (err) {
             if (conn) {
                 conn.release();
@@ -81,7 +68,7 @@ var linkList = function (status, callback) {
 * */
 var saveCrawlList = function (link) {
     //Connection Pool에서 하나 연결
-    pool().getConnection(function (err, conn) {
+    createDB.pool().getConnection(function (err, conn) {
         if (err) {
             if (conn) {
                 conn.release();

@@ -9,6 +9,7 @@
     "@google-cloud/vision": "^0.19.0",
     "body-parser": "~1.18.2",
     "bootstrap": "^4.0.0",
+    "casperjs": "^1.1.4",
     "cheerio": "^1.0.0-rc.2",
     "cheerio-httpcli": "^0.7.3",
     "cookie-parser": "~1.4.3",
@@ -21,9 +22,9 @@
     "jschardet": "^1.6.0",
     "morgan": "~1.9.0",
     "mysql": "^2.15.0",
+    "phantomjs": "^2.1.7",
     "request": "^2.85.0",
     "serve-favicon": "~2.4.5",
-    "phantomjs": "^2.1.7",
-    "casperjs": "^1.1.4"
+    "webpage": "^0.3.0"
   }
 }

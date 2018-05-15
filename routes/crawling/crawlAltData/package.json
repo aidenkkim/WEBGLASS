@@ -1,5 +1,5 @@
 {
-  "name"    : "easy-app",
-  "version" : "0.1.0",
-  "main"    : "electronMainDownload.js"
+  "name": "easy-app",
+  "version": "0.1.0",
+  "main": "electronMainDownload.js"
 }

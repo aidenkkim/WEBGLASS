@@ -3,32 +3,18 @@
 * */
 
 var cheerio = require('cheerio');
-var mysql = require('mysql');
-var config = require('../../../config');
+var createDB = require('./createDB');
 
-//Database 설정
-var pool = function () {
-    var dbPool = mysql.createPool({
-        connectionLimit: 10,
-        host: config.db_host,
-        user: config.db_user,
-        password: config.db_passwd,
-        port: config.db_port,
-        database: config.database
-    });
-    console.log('Create Database Pool Done')
-    return dbPool;
-}
 
 //DB에서 가져와 Scraping 할 Page 수
-const SCRAPING_NUM = 500;
-
+const SCRAPING_NUM = 5000;
+const DOWNLOAD_NUM = 100;
 
 /*
 * html을 입력으로 받아 imagePath : alt Object return
 * INPUT     :   Image URL, html Code
 */
-var parseImgPath = function (html,callback) {
+var parseImgPath = function (html, callback) {
 
     var images = {};
     var src = null;
@@ -42,24 +28,23 @@ var parseImgPath = function (html,callback) {
     $('img').each(function (idx, item) {
         src = $(item).attr('src');
         alt = $(item).attr('alt');
-            images[src] = alt;
+        images[src] = alt;
 
         console.log('Extract Image Alt Text');
     });
 
     var data = [];
-    for(var i in images){
+    for (var i in images) {
         data.push([i, images[i]]);
     }
     callback(data);
 }
 
 
-
-
 var linkList = function (status, callback) {
     //Connection Pool에서 하나 연결
-    pool().getConnection(function (err, conn) {
+
+    createDB.pool().getConnection(function (err, conn) {
         if (err) {
             if (conn) {
                 conn.release();
@@ -67,12 +52,13 @@ var linkList = function (status, callback) {
             return;
         }
         var data = {};
+
         // SQL 문을 실행함
         var query = null;
-        if(status == 0){
-            query = 'SELECT * FROM crawl_link WHERE status='+status +' limit 50';
-        }else if(status == 1){
-            query = 'SELECT * FROM crawl_link WHERE status='+status +' limit '+SCRAPING_NUM;
+        if (status == 0) {
+            query = 'SELECT * FROM crawl_link WHERE status=' + status + ' limit '+DOWNLOAD_NUM;
+        } else if (status == 1) {
+            query = 'SELECT * FROM crawl_link WHERE status=' + status + ' limit ' + SCRAPING_NUM;
         }
         var exec = conn.query(query, data, function (err, result) {
             // Connection Pool 반드시 해제해야 함
@@ -81,14 +67,15 @@ var linkList = function (status, callback) {
                 console.dir(err);
                 return;
             }
-            console.log('Bring Crawl Link Status '+status +' || Total : '+ result.length)
+            console.log('Bring Crawl Link Status ' + status + ' || Total : ' + result.length)
             callback(result);
         });
+
         var query2 = null;
-        if(status == 0){
-            query2 = 'UPDATE crawl_link SET status = '+ (status+1) +' WHERE status='+status +' limit 50';
-        }else if(status == 1){
-            query2 = 'UPDATE crawl_link SET status = '+ (status+1) +' WHERE status='+status + ' limit '+SCRAPING_NUM;
+        if (status == 0) {
+            query2 = 'UPDATE crawl_link SET status = ' + (status + 1) + ' WHERE status=' + status + ' limit '+DOWNLOAD_NUM;
+        } else if (status == 1) {
+            query2 = 'UPDATE crawl_link SET status = ' + (status + 1) + ' WHERE status=' + status + ' limit ' + SCRAPING_NUM;
         }
         var exec = conn.query(query2, data, function (err, result) {
             // Connection Pool 반드시 해제해야 함
@@ -98,8 +85,10 @@ var linkList = function (status, callback) {
                 console.dir(err);
                 return;
             }
-            console.log('Update Crawl Link Status to '+ (status+1) +' || Total : '+ result.affectedRows);
+            console.log('Update Crawl Link Status to ' + (status + 1) + ' || Total : ' + result.affectedRows);
         });
+
+
     });
 }
 
@@ -111,7 +100,7 @@ var linkList = function (status, callback) {
 * * INPUT     :   Image URL
 * */
 var saveScrapingAltData = function (images) {
-    pool().getConnection(function (err, conn) {                                     //Connection Pool에서 하나 연결
+    createDB.pool().getConnection(function (err, conn) {                                     //Connection Pool에서 하나 연결
         if (err) {
             if (conn) {
                 conn.release();
@@ -136,7 +125,6 @@ var saveScrapingAltData = function (images) {
 }
 
 
-
-module.exports.parseImgPath =parseImgPath;
-module.exports.linkList =linkList;
-module.exports.saveScrapingAltData =saveScrapingAltData;
+module.exports.parseImgPath = parseImgPath;
+module.exports.linkList = linkList;
+module.exports.saveScrapingAltData = saveScrapingAltData;

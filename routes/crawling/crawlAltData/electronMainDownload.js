@@ -9,44 +9,52 @@ var altScraping = require('./altScraping');
 var electron = require('electron');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
-var win = new Array();
+
+const WINDOW_NUM = 5;
 
 // 준비가 된 시점에 호출되는 이벤트
 app.on('ready', function () {
+    var win = [];
+    for (var i = 0; i < WINDOW_NUM; i++) {
+        win[i] = new BrowserWindow({
+            show:false
+        });
+    }
     altScraping.linkList(0, function (linkList) {
-        var count = 0;
-
-        for (var i in linkList) {
-            // 메인 윈도우 생성
-            win[count] = new BrowserWindow({
-                width: 800,
-                height: 600
-            });
-            // 지정 URL 로드
-            win[count].loadURL(linkList[i].link);
-            count++;
-            console.log('Loading Page : '+count);
-        }
-        var count = 1;
-        setTimeout(function () {
-            for (var i in win) {
-                //javascript 파일까지 로딩 후 크롤링 하기 위해서 일정 시간 Delay
-
-                //로딩된 페이지를 ./test.html로 저장 , 모든 컨텐츠도 다운로드됨
-                //HTMLComplete, HTMLOnly 선택 가능
-                //iframe 을 추출하기 위해 HTMLOnly 선택
-                //HTMLComplete 선택하면 Resource 모두 다운로드됨
-                win[i].webContents.savePage('./crawled_data/gmarket_'+ linkList[i].crawl_link_id + '.html', 'HTMLOnly', (error) => {
-                    if (!error) {
-                        console.log('Saving Page : ' + count + ' / ' + win.length);
-                        if(count >= win.length){
-                            console.log('Save Product Page Done');
-                        }
-                        count++;
-                    }
-                });
-            }
-
-        }, 60000);
+        download(0, linkList, win);
     });
 });
+
+var download = function (count, linkList, win) {
+    var totalLength = linkList.length;
+    if (count == totalLength) {
+        console.log('Download Done');
+        return;
+    }
+
+    var currentCountStart = count;
+    console.log('------------Current Count : ' + count + ' / ' + totalLength + '--------------');
+
+    for (var i in win) {
+        win[i].loadURL(linkList[count].link);
+        console.log('Loading Page : ' + count + ' / Window(' + i + ')');
+        count++;
+    }
+
+    var countStart = currentCountStart;
+    setTimeout(function () {
+        for (var i in win) {
+            win[i].webContents.savePage('./crawled_data/gmarket_' + linkList[(Number(i)+countStart)].crawl_link_id + '.html', 'HTMLOnly', (error) => {
+                if (!error) {
+                    console.log('Saving Page : ' + currentCountStart + ' / ' + totalLength + '-----------');
+                    currentCountStart++;
+                    if (currentCountStart % win.length == 0) {
+                        console.log('Save Product Page Done');
+                        download(count, linkList, win);
+                    }
+                }
+            });
+        }
+    }, 7000);
+}
+
