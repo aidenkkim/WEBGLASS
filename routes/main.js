@@ -8,19 +8,17 @@ var request = require('request');
 
 var altProcesser = require('./altProcesser');
 var dataManager = require('./dataManager');
-var testHTML2 = require('./template_code/testHTML2');
+//var testHTML2 = require('./template_code/testHTML2');
 var vision = require('@google-cloud/vision');
 
 
-var main = function (req, res) {
-    var html = testHTML2.html;
+var main = function (req, response) {
+    /*var html = testHTML2.html;
     var url = "http://item.gmarket.co.kr/detailview/Item.asp?goodscode=125075689&pos_shop_cd=GE&pos_class_cd=100000020&pos_class_kind=L";
     console.log(url + ' 웹 접근성 개선 요청');
+*/
 
-    /*
-        var html = req.body.html;
-        var url = req.body.url;
-    */
+    var html = req.body.html;
 
     //Google Vision API Key 입력
     const GOOGLEVISIONAPI = new vision.ImageAnnotatorClient({
@@ -44,7 +42,7 @@ var main = function (req, res) {
         //iframePath에 있는 상품 이미지 추출
         console.log('iframe 추출 완료');
         request(iframePath, function (err, res, body) {
-            
+
             /*
             * 접근성 개선하고자 하는 페이지 {Image Link Path : alt}
             * INPUT     :   html code (String)
@@ -93,6 +91,7 @@ var main = function (req, res) {
                             result[path] = analyzedAlt;
                             if (i >= length) {
                                 console.log('*****************최종 결과*****************\n' + result);
+                                response.send({'result': result})
                             }
 
 
@@ -107,8 +106,6 @@ var main = function (req, res) {
 
         });
     })
-
-    res.send({'result': result})
 };
 
 

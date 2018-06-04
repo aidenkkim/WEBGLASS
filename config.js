@@ -7,6 +7,6 @@ module.exports = {
     database:'webglass',
     route_info: [
         //===== User =====//
-        {file:'./main', path:'/', method:'main', type:'get'}
+        {file:'./main', path:'/', method:'main', type:'post'}
     ]
 }

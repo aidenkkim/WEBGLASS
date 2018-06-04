@@ -7,7 +7,7 @@ var createDB = require('./createDB');
 
 
 //DB에서 가져와 Scraping 할 Page 수
-const SCRAPING_NUM = 5000;
+const SCRAPING_NUM = 500;
 const DOWNLOAD_NUM = 100;
 
 /*

@@ -1,12 +1,20 @@
 var request = require('request');
 
+
 var URL = 'http://item.gmarket.co.kr/detailview/Item.asp?goodscode='
 var goodscode = 100000000;
 
 var reqURL = null;
-var createDB = require('../createDB');
+var createDB = require('./createDB');
 
 var result = [];
+
+
+altScraping.linkList(0, function (linkList) {
+    download(0, linkList, win);
+});
+
+
 
 var req = function (count) {
     console.log('count : ' + count)

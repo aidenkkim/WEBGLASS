@@ -15,7 +15,7 @@ altScraping.linkList(1, function (linkList) {
         //저장된 html 읽어오기
         //Binary로 읽어야 아래에서 Encoding 변경 가능
         try {
-        var data = fs.readFileSync('./crawled_data/gmarket_' + linkList[i].crawl_link_id + '.html', 'binary');
+        var data = fs.readFileSync('C:/Users/ouhhh/Desktop/Data/gmarket_' + linkList[i].crawl_link_id + '.html', 'binary');
 
         //Page가 utf-8 , euc-kr 두 가지 형태로 있기 때문에 각각에 대하여 처리
         var $ = cheerio.load(data);
